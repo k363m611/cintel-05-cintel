@@ -1,34 +1,23 @@
 # --------------------------------------------
-# Imports at the top - PyShiny EXPRESS VERSION
+# SET UP THE REACTIVE CONTENT
 # --------------------------------------------
 
-# From shiny, import just reactive and render
-from shiny import reactive, render
+# First, set a constant UPDATE INTERVAL for all live data
+UPDATE_INTERVAL_SECS: int = 1
 
-# From shiny.express, import just ui
-from shiny.express import ui
+# Initialize a REACTIVE CALC that will get the fake temperature and timestamp every N seconds
+@reactive.calc()
+def reactive_calc_combined():
+    # Invalidate this calculation every UPDATE_INTERVAL_SECS to trigger updates
+    reactive.invalidate_later(UPDATE_INTERVAL_SECS)
 
-# Imports from Python Standard Library to simulate live data
-import random
-from datetime import datetime
+    # Data generation logic. Get random temperature between -18 and -16 C, rounded to 1 decimal place
+    temp = round(random.uniform(-18, -16), 1)
 
-# --------------------------------------------
-# Optional: Import font awesome icons as you like
-# --------------------------------------------
+    # Get a timestamp for "now"
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-from faicons import icon_svg
+    # Return the fake data as a dictionary
+    latest_dictionary_entry = {"temp": temp, "timestamp": timestamp}
 
-# --------------------------------------------
-# FOR OPTIONAL LOCAL DEVELOPMENT
-# --------------------------------------------
-
-# Add all packages not in the Std Library
-# to requirements.txt ONLY when working locally:
-#
-# faicons
-# shiny
-# shinylive
-#
-# And install them into an active project virtual environment (usually in .venv)
-# --------------------------------------------
-
+    return latest_dictionary_entry
