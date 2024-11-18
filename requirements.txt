@@ -1,1 +1,8 @@
-
+faicons for Font Awesome icons
+pandas for data manipulation
+pyarrow (if required by pandas)
+plotly for interactive charts
+scipy for linear regression (predictive analytics)
+shiny for building the interactive web app
+shinylive for building and deploying the app (especially for GitHub Pages)
+shinywidgets for more complex interactive widgets like Plotly charts.
