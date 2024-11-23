@@ -2,100 +2,157 @@
 # Imports at the top - PyShiny EXPRESS VERSION
 # --------------------------------------------
 
+# From shiny, import just reactive and render
 from shiny import reactive, render
+
+# From shiny.express, import just ui
 from shiny.express import ui
+
+# Imports from Python Standard Library to simulate live data
 import random
 from datetime import datetime
+
+# --------------------------------------------
+# Import icons as you like
+# --------------------------------------------
+
 from faicons import icon_svg
 
 # --------------------------------------------
-# SET UP THE REACTIVE CONTENT
+# FOR LOCAL DEVELOPMENT
+# --------------------------------------------
+# Add all packages not in the Std Library
+# to requirements.txt:
+#
+# faicons
+# shiny
+# shinylive
+# 
+# And install them into an active project virtual environment (usually in .venv)
 # --------------------------------------------
 
-UPDATE_INTERVAL_SECS: int = 1  # Data update every 1 second
+# --------------------------------------------
+# SET UP THE REACIVE CONTENT
+# --------------------------------------------
 
-# Initialize a REACTIVE CALC to simulate fake temperature and timestamp data
+# --------------------------------------------
+# PLANNING: We want to get a fake temperature and 
+# Time stamp every N seconds. 
+# For now, we'll avoid storage and just 
+# Try to get the fake live data working and sketch our app. 
+# We can do all that with one reactive calc.
+# Use constants for update interval so it's easy to modify.
+# ---------------------------------------------------------
+
+# --------------------------------------------
+# First, set a constant UPDATE INTERVAL for all live data
+# Constants are usually defined in uppercase letters
+# Use a type hint to make it clear that it's an integer (: int)
+# --------------------------------------------
+
+UPDATE_INTERVAL_SECS: int = 1
+
+# --------------------------------------------
+# Initialize a REACTIVE CALC that our display components can call
+# to get the latest data and display it.
+# The calculation is invalidated every UPDATE_INTERVAL_SECS
+# to trigger updates.
+# It returns everything needed to display the data.
+# Very easy to expand or modify.
+# (I originally looked at REACTIVE POLL, but this seems to work better.)
+# --------------------------------------------
+
+
 @reactive.calc()
-def reactive_calc_temperature():
+def reactive_calc_combined():
     # Invalidate this calculation every UPDATE_INTERVAL_SECS to trigger updates
     reactive.invalidate_later(UPDATE_INTERVAL_SECS)
 
-    # Simulate temperature data (between -18 and -16 degrees Celsius)
+    # Data generation logic. Get random between -18 and -16 C, rounded to 1 decimal place
     temp = round(random.uniform(-18, -16), 1)
 
-    # Get a timestamp for "now"
+    # Get a timestamp for "now" and use string format strftime() method to format it
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    latest_dictionary_entry = {"temp": temp, "timestamp": timestamp}
 
-    # Return the data as a dictionary
-    latest_data_entry = {"temp": temp, "timestamp": timestamp}
-    return latest_data_entry
+    # Return everything we need
+    return latest_dictionary_entry
 
-
-# --------------------------------------------
+# ------------------------------------------------
 # Define the Shiny UI Page layout - Page Options
-# --------------------------------------------
+# ------------------------------------------------
 
-ui.page_opts(title="Antarctic Temperature Tracker", fillable=True)
+# Call the ui.page_opts() function
+# Set title to a string in quotes that will appear at the top
+# Set fillable to True to use the whole page width for the UI
 
-# Sidebar with fun information
+ui.page_opts(title="PyShiny Express: Live Data (Basic)", fillable=True)
+
+# ------------------------------------------------
+# Define the Shiny UI Page layout - Sidebar
+# ------------------------------------------------
+
+# Sidebar is typically used for user interaction/information
+# Note the with statement to create the sidebar followed by a colon
+# Everything in the sidebar is indented consistently
+
 with ui.sidebar(open="open"):
-    ui.h2("🌨️ Antarctic Explorer 🐧", class_="text-center")
+
+    ui.h2("Antarctic Explorer", class_="text-center")
+
     ui.p(
-        "A demo app to track the latest temperature in Antarctica. Stay warm or freeze! ❄️",
+        "A demonstration of real-time temperature readings in Antarctica.",
         class_="text-center",
     )
+
     ui.hr()
+
     ui.h6("Links:")
-    ui.a("GitHub Source", href="https://github.com/k363m611", target="_blank")
+
+    ui.a(
+        "GitHub Source",
+        href="https://github.com/k363m611/cintel-05-cintel-basic",  # Changed to k363m611 GitHub source
+        target="_blank",
+    )
+
+    ui.a(
+        "GitHub App",
+        href="https://k363m611.github.io/cintel-05-cintel-basic/",  # Changed to k363m611 GitHub app
+        target="_blank",
+    )
+
     ui.a("PyShiny", href="https://shiny.posit.co/py/", target="_blank")
 
-# ------------------------------------------------
-# Main content area - Current Data
-# ------------------------------------------------
 
-# Main content - Current Temperature Box with fun icons
-with ui.row():  # Use `ui.row()` for layout
-    with ui.column():
-        with ui.value_box(
-            showcase=icon_svg("thermometer-half"),  # Icon representing temperature
-            theme="bg-gradient-blue-purple",
-        ):
-            "Current Temperature"
-            @render.text
-            def display_temp():
-                """Get the latest temperature reading"""
-                latest_data_entry = reactive_calc_temperature()
-                return f"{latest_data_entry['temp']}°C"
+#---------------------------------------------------------------------
+# In Shiny Express, everything not in the sidebar is in the main panel
+#---------------------------------------------------------------------
+    
+ui.h2("Current Temperature")
 
-    with ui.column():
-        with ui.value_box(
-            showcase=icon_svg("calendar-alt"),  # Calendar icon for timestamp
-            theme="bg-gradient-purple-pink",
-        ):
-            "Current Timestamp"
-            @render.text
-            def display_timestamp():
-                """Get the latest timestamp"""
-                latest_data_entry = reactive_calc_temperature()
-                return f"{latest_data_entry['timestamp']}"
+@render.text
+def display_temp():
+    """Get the latest reading and return a temperature string"""
+    latest_dictionary_entry = reactive_calc_combined()
+    return f"{latest_dictionary_entry['temp']} C"
 
-# ------------------------------------------------
-# Optional: Add a chart to show temperature trends
-# ------------------------------------------------
+ui.p("warmer than usual")
+icon_svg("sun")
 
-# This section could be expanded with a plotly chart (if you want a trendline)
-# For simplicity, we'll just display the last N readings in a data grid.
+ui.hr()
 
-# --------------------------------------------
-# Display Most Recent Data Readings
-# --------------------------------------------
+ui.h2("Current Date and Time")
 
-with ui.card(full_screen=True):
-    ui.card_header("📊 Most Recent Temperature Readings")
-    @render.data_frame
-    def show_data_frame():
-        """Display the last few temperature readings in a table"""
-        latest_data_entry = reactive_calc_temperature()
-        # Here you could store and display the last few readings, but for now:
-        df = pd.DataFrame([latest_data_entry])
-        return render.DataGrid(df, width="100%", height=300)
+@render.text
+def display_time():
+    """Get the latest reading and return a timestamp string"""
+    latest_dictionary_entry = reactive_calc_combined()
+    return f"{latest_dictionary_entry['timestamp']}"
+
+with ui.layout_columns():
+    with ui.card():
+        ui.card_header("Current Data (placeholder only)")
+
+with ui.layout_columns():
+    with ui.card():
+        ui.card_header("Current Chart (placeholder only)")
